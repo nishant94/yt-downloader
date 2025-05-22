@@ -1,5 +1,17 @@
 import axios from "axios";
 
+// Add this for Vite env types
+declare global {
+  interface ImportMeta {
+    readonly env: {
+      VITE_BACKEND_URL: string;
+      [key: string]: string;
+    };
+  }
+}
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 export type Format = {
   itag: number;
   mimeType: string;
@@ -36,7 +48,7 @@ export type Metadata = {
 };
 
 export const fetchMetadata = async (videoId: string): Promise<Metadata> => {
-  const res = await axios.get("/youtube/metadata", {
+  const res = await axios.get(`${BACKEND_URL}/youtube/metadata`, {
     params: { videoId },
   });
   return res.data.data;
@@ -52,7 +64,7 @@ export const downloadVideo = async (
 ) => {
   axios
     .post(
-      "/youtube/download",
+      `${BACKEND_URL}/youtube/download`,
       { videoId, itag, audioitag, format, type, metadata },
       { responseType: "blob" },
     )
