@@ -1,3 +1,33 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+body {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  min-height: 100vh;
+  color: #2a2a2a;
+}
+
+.dark body {
+  background: linear-gradient(135deg, #1a1a1d 0%, #4e4e50 100%);
+  color: #f0f0f0;
+}
+
+/* Card backgrounds */
+.card-light {
+  background: #f2f2f2 !important;
+}
+.card-dark {
+  background: #121212 !important;
+}
+
+/* Accent color utility */
+.accent {
+  color: #ff6f61 !important;
+}
+.bg-accent {
+  background-color: #ff6f61 !important;
+}
+
+/* Royal shadow utility */
+.shadow-royal-xl {
+  box-shadow: 0 8px 32px 0 rgba(78, 78, 80, 0.18), 0 1.5px 8px 0 #ff6f6144;
+}

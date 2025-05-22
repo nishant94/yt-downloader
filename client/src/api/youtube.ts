@@ -44,11 +44,11 @@ export const fetchMetadata = async (videoId: string): Promise<Metadata> => {
 
 export const downloadVideo = async (
   videoId: string,
-  itag?: number,
-  audioitag?: number,
-  format?: any,
-  type?: string,
-  metadata?: Metadata,
+  itag: number,
+  format: any,
+  type: string,
+  metadata: Metadata,
+  audioitag: number,
 ) => {
   axios
     .post(
@@ -61,7 +61,7 @@ export const downloadVideo = async (
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `video_${videoId}.${type == "audio" ? "mp3" : "mp4"}`;
+      a.download = `${metadata?.title}.${type == "audio" ? "mp3" : "mp4"}`;
       document.body.appendChild(a);
       a.click();
       a.remove();

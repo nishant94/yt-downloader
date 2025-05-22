@@ -1,4 +1,4 @@
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { videoIdSchema } from "../helpers/validation";
 
@@ -24,9 +24,9 @@ const VideoForm = ({ loading, onSubmit, error }: VideoFormProps) => {
   const videoId = watch("videoId");
 
   return (
-    <div className="mb-6">
+    <div className="mb-0">
       <form
-        className="flex gap-3 mb-2"
+        className="flex gap-3 mb-0"
         onSubmit={handleSubmit(onSubmit)}
         autoComplete="off"
       >
@@ -34,10 +34,10 @@ const VideoForm = ({ loading, onSubmit, error }: VideoFormProps) => {
           <div
             className={`absolute -inset-1 bg-gradient-to-r ${
               errors.videoId
-                ? "from-red-600 to-red-400"
-                : "from-red-600 to-violet-600"
+                ? "from-pink-400 to-purple-400"
+                : "from-blue-400 to-blue-200"
             } rounded-lg blur opacity-${
-              errors.videoId ? "50" : "25"
+              errors.videoId ? "60" : "30"
             } group-hover:opacity-100 transition duration-1000 group-hover:duration-200`}
           ></div>
           <div className="relative rounded-lg leading-none">
@@ -47,8 +47,10 @@ const VideoForm = ({ loading, onSubmit, error }: VideoFormProps) => {
               {...register("videoId")}
               onChange={(e) => setValue("videoId", e.target.value)}
               disabled={loading}
-              className={`w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-md outline-none transition-all duration-300 ring-1 ${
-                errors.videoId ? "ring-red-400" : "ring-gray-900/5"
+              className={`w-full px-4 py-3 rounded-xl bg-white/90 dark:bg-gray-900/80 text-gray-900 dark:text-gray-100 shadow-lg outline-none transition-all duration-300 ring-2 focus:ring-blue-400 focus:shadow-blue-200/30 dark:focus:ring-pink-400/80 ${
+                errors.videoId
+                  ? "ring-pink-400 dark:ring-pink-400"
+                  : "ring-blue-200 dark:ring-blue-400"
               }`}
             />
           </div>
@@ -56,9 +58,34 @@ const VideoForm = ({ loading, onSubmit, error }: VideoFormProps) => {
         <button
           type="submit"
           disabled={!videoId || loading}
-          className="px-6 py-3 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white shadow-lg hover:from-fuchsia-500 hover:to-cyan-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 rounded-xl font-bold bg-gradient-to-r from-royal-gold via-accent to-royal-blue text-white shadow-xl hover:from-accent hover:to-royal-gold hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-royal-gold/60 dark:border-accent/60 focus:outline-none focus:ring-4 focus:ring-royal-gold/40 dark:focus:ring-accent/40"
         >
-          {loading ? "Fetching..." : "Fetch Metadata"}
+          {loading ? (
+            <span className="inline-flex items-center gap-2 animate-pulse">
+              <svg
+                className="w-5 h-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+              Fetching...
+            </span>
+          ) : (
+            "Fetch Metadata"
+          )}
         </button>
       </form>
       {errors.videoId && (

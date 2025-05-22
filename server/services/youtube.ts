@@ -63,6 +63,7 @@ export class YoutubeService {
     itag: number,
     audioitag: number,
     format: videoFormat,
+    title: string,
   ) {
     console.log(
       "[YouTubeService] Starting audio and video download streams...",
@@ -250,10 +251,7 @@ export class YoutubeService {
       });
 
     res.setHeader("Content-Type", "video/mp4");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=video_${videoId}.mp4`,
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=${title}.mp4`);
 
     return new Promise<void>((resolve) => {
       res.on("close", () => {
@@ -267,6 +265,7 @@ export class YoutubeService {
   private async streamWebmAudioToMp3(
     url: string,
     videoId: string,
+    title: string,
     res: Response,
     ytdlOptions: any,
   ) {
@@ -402,10 +401,7 @@ export class YoutubeService {
       });
 
     res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=audio_${videoId}.mp3`,
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=${title}.mp3`);
 
     return new Promise<void>((resolve) => {
       res.on("close", () => {
@@ -417,6 +413,7 @@ export class YoutubeService {
 
   async streamToResponse(
     videoId: string,
+    title: string,
     res: Response,
     itag?: number,
     audioitag?: number,
@@ -434,8 +431,6 @@ export class YoutubeService {
     };
 
     const progressEmitter = YoutubeService.getProgressEmitter(videoId);
-    let progressSent = false;
-
     if (type === "video" && !format?.hasAudio && audioitag) {
       progressEmitter.emit("progress", {
         status: "processing",
@@ -449,6 +444,7 @@ export class YoutubeService {
         itag!,
         audioitag,
         format!,
+        title,
       );
     }
 
@@ -458,7 +454,7 @@ export class YoutubeService {
         progress: 0,
         event: "start-conversion",
       });
-      return this.streamWebmAudioToMp3(url, videoId, res, ytdlOptions);
+      return this.streamWebmAudioToMp3(url, videoId, title, res, ytdlOptions);
     }
 
     const video = ytdl(url, ytdlOptions);
@@ -486,7 +482,6 @@ export class YoutubeService {
             speed: downloaded / ((Date.now() - startTime) / 1000),
             event: "downloading",
           });
-          progressSent = true;
         }
       },
     );
