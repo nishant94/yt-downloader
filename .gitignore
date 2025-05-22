@@ -1,0 +1,10 @@
+# Dependency directories
+node_modules/
+
+# DS Store files
+.DS_Store/
+
+# logs server/logs
+logs/
+
+dist/
