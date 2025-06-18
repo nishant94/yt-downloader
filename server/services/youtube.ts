@@ -22,7 +22,7 @@ export class YoutubeService {
   }
 
   async getMetadata(videoId: string, cookies?: any) {
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    const url = `https://yewtu.be/watch?v=${videoId}`;
     const video = await ytdl.getInfo(url, {
       requestOptions: {
         headers: {
@@ -427,7 +427,7 @@ export class YoutubeService {
     format?: videoFormat,
     type?: string,
   ) {
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    const url = `https://yewtu.be/watch?v=${videoId}`;
     const ytdlOptions: any = {
       quality: itag,
       requestOptions: {
