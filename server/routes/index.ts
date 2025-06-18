@@ -35,7 +35,14 @@ async function requireSession(
 ): Promise<void> {
   const sessionId = req.cookies?.sessionId;
   if (!sessionId) {
-    res.status(401).json({ message: "SessionId not found", sessionId });
+    res
+      .status(401)
+      .json({
+        message: "SessionId not found 4",
+        sessionId,
+        process: process.env.NODE_ENV || "null",
+        domain: process.env.COOKIE_DOMAIN || "null",
+      });
     return;
   }
   if (!(await isValidSession(sessionId))) {
