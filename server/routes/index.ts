@@ -1,80 +1,54 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { VideoController } from "../controllers/video";
 import { YoutubeService } from "../services/youtube";
+import { createSession, isValidSession } from "../services/session";
+import crypto from "crypto";
 
 const router = Router();
 const videoController = new VideoController();
+const SESSION_DURATION = 60 * 60 * 1000; // 1 hour
 
 router.get("/healthz", (_req, res) => {
   res.status(200).send("ok");
 });
 
-/**
- * @swagger
- * /youtube/metadata:
- *   get:
- *     description: Get metadata of a youtube video
- *     parameters:
- *       - name: videoId
- *         description: The youtube video id
- *         in: query
- *         required: true
- *         type: string
- *     responses:
- *       200:
- *         description: A successful response
- *       400:
- *         description: Bad request
- */
-router.get("/youtube/metadata", (req, res) => {
+router.get("/get-session", async (req, res) => {
+  let sessionId = req.cookies?.sessionId;
+  if (!sessionId || !(await isValidSession(sessionId))) {
+    sessionId = crypto.randomBytes(24).toString("hex");
+    await createSession(sessionId, Date.now() + SESSION_DURATION);
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: SESSION_DURATION,
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+  res.status(200).json({ ok: true });
+});
+
+async function requireSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const sessionId = req.cookies?.sessionId;
+  if (!sessionId || !(await isValidSession(sessionId))) {
+    res.status(401).json({ message: "Invalid or expired session" });
+    return;
+  }
+  next();
+}
+
+router.get("/youtube/metadata", requireSession, (req, res) => {
   videoController.getYoutubeMetadata(req, res);
 });
 
-/**
- * @swagger
- * /youtube/download:
- *   get:
- *     description: Stream and download a youtube video directly to the client
- *     parameters:
- *       - name: videoId
- *         description: The youtube video id
- *         in: query
- *         required: true
- *         type: string
- *       - name: itag
- *         description: video format itag
- *         in: query
- *         required: true
- *         type: number
- *     responses:
- *       200:
- *         description: File stream
- *       400:
- *         description: Bad request
- */
-
-router.post("/youtube/download", (req, res) => {
+router.post("/youtube/download", requireSession, (req, res) => {
   videoController.streamYoutubeVideo(req, res);
 });
 
-/**
- * @swagger
- * /youtube/progress/{videoId}:
- *   get:
- *     description: Stream progress events for a given videoId
- *     parameters:
- *       - name: videoId
- *         description: The youtube video id
- *         in: path
- *         required: true
- *         type: string
- *     responses:
- *       200:
- *         description: Event stream
- *       400:
- *         description: Bad request
- */
-router.get("/youtube/progress/:videoId", (req, res) => {
+router.get("/progress/:videoId", (req, res) => {
   const { videoId } = req.params;
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");

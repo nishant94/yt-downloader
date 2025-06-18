@@ -1,5 +1,8 @@
 {
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8"
+  },
   "dependencies": {
-    "react-hook-form": "^7.56.4"
+    "cache-manager": "^7.0.0"
   }
 }

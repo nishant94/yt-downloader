@@ -1,29 +1,20 @@
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import routes from "./routes/index";
 import cors from "cors";
-import swaggerJSDoc from "swagger-jsdoc";
-import swaggerUI from "swagger-ui-express";
+import cookieParser from "cookie-parser";
 
 const app = express();
-const PORT = 5000;
+const PORT = 8001;
 
-const swaggerOptions = {
-  swaggerDefinition: {
-    info: {
-      title: "Youtube Download API",
-      version: "1.0.0",
-    },
-    servers: ["http://localhost:5000"],
-  },
-  apis: ["./routes/*.ts"],
-};
-
-const swaggerDocs = swaggerJSDoc(swaggerOptions);
-
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(cookieParser());
 app.use("/", routes);
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -121,7 +121,10 @@ const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
       eventSourceRef.current.close();
     }
     eventSourceRef.current = new EventSource(
-      `/youtube/progress/${metadata.id}`,
+      `${import.meta.env.VITE_BACKEND_URL.replace(
+        /\/$/,
+        "",
+      )}/progress/${metadata.id}`,
     );
     eventSourceRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);

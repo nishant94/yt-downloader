@@ -6,6 +6,16 @@ import VideoMetadata from "./components/VideoMetadata";
 import { fetchMetadata, downloadVideo, Metadata } from "./api/youtube";
 import { ThemeProvider } from "./helpers/ThemeContext";
 
+declare global {
+  interface ImportMeta {
+    readonly env: {
+      VITE_BACKEND_URL: string;
+      VITE_JWT_SECRET: string;
+      [key: string]: string;
+    };
+  }
+}
+
 const App = () => {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [loading, setLoading] = useState<boolean>(false);

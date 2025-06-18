@@ -267,7 +267,8 @@ export class YoutubeService {
     videoId: string,
     title: string,
     res: Response,
-    ytdlOptions: any,
+    ytdlOptions: videoFormat,
+    audioBitrate: number = 128,
   ) {
     const progressEmitter = YoutubeService.getProgressEmitter(videoId);
     progressEmitter.emit("progress", {
@@ -277,28 +278,26 @@ export class YoutubeService {
     });
 
     const audioStream = ytdl(url, ytdlOptions);
-    const ffmpegProcess = cp.spawn(
-      ffmpegPath as string,
-      [
-        "-loglevel",
-        "info",
-        "-hide_banner",
-        "-thread_queue_size",
-        "512",
-        "-i",
-        "pipe:3",
-        "-vn",
-        "-acodec",
-        "libmp3lame",
-        "-f",
-        "mp3",
-        "pipe:1",
-      ],
-      {
-        windowsHide: true,
-        stdio: ["pipe", "pipe", "pipe", "pipe"], // stderr is now at index 2
-      },
-    );
+    const ffmpegArgs = [
+      "-loglevel",
+      "info",
+      "-hide_banner",
+      "-thread_queue_size",
+      "512",
+      "-i",
+      "pipe:3",
+      "-vn",
+      "-acodec",
+      "libmp3lame",
+    ];
+    ffmpegArgs.push("-b:a", `${audioBitrate}k`);
+
+    ffmpegArgs.push("-f", "mp3", "pipe:1");
+
+    const ffmpegProcess = cp.spawn(ffmpegPath as string, ffmpegArgs, {
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe", "pipe"], // stderr is now at index 2
+    });
 
     if (ffmpegProcess.stdout) {
       ffmpegProcess.stdout.pipe(res);
@@ -454,7 +453,14 @@ export class YoutubeService {
         progress: 0,
         event: "start-conversion",
       });
-      return this.streamWebmAudioToMp3(url, videoId, title, res, ytdlOptions);
+      return this.streamWebmAudioToMp3(
+        url,
+        videoId,
+        title,
+        res,
+        ytdlOptions,
+        format.audioBitrate,
+      );
     }
 
     const video = ytdl(url, ytdlOptions);
