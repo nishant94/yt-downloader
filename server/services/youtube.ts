@@ -22,15 +22,15 @@ export class YoutubeService {
   }
 
   async getMetadata(videoId: string, cookies?: any) {
-    const url = `https://yewtu.be/watch?v=${videoId}`;
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
     const video = await ytdl.getInfo(url, {
       requestOptions: {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-          Cookie: JSON.stringify(cookies),
         },
       },
+      playerClients: ["WEB_EMBEDDED"],
     });
     const formats = video.formats.map((f: any) => ({
       itag: f.itag,
@@ -325,7 +325,7 @@ export class YoutubeService {
     // --- ffmpeg progress parsing for audio-only (webm to mp3) ---
     let durationSeconds = 0;
     try {
-      const info = await ytdl.getInfo(url);
+      const info = await ytdl.getInfo(url, { playerClients: ["WEB_EMBEDDED"] });
       durationSeconds = Number(info.videoDetails.lengthSeconds) || 0;
     } catch (e) {
       durationSeconds = 0;
@@ -427,9 +427,10 @@ export class YoutubeService {
     format?: videoFormat,
     type?: string,
   ) {
-    const url = `https://yewtu.be/watch?v=${videoId}`;
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
     const ytdlOptions: any = {
       quality: itag,
+      playerClients: ["WEB_EMBEDDED"],
       requestOptions: {
         headers: {
           Cookie: "CONSENT=YES+1",
