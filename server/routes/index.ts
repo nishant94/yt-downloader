@@ -19,9 +19,10 @@ router.get("/get-session", async (req, res) => {
     await createSession(sessionId, Date.now() + SESSION_DURATION);
     res.cookie("sessionId", sessionId, {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: SESSION_DURATION,
       secure: process.env.NODE_ENV === "production",
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
   }
   res.status(200).json({ ok: true });
