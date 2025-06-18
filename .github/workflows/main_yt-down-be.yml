@@ -28,8 +28,8 @@ jobs:
       with:
         push: true
         tags: ytdown.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_89c28a3dfd34403591931a7bdd20af62 }}/yt-down-be:${{ github.sha }}
-        file: ./server/Dockerfile
-        context: ./server
+        file: ./server-py/Dockerfile
+        context: ./server-py
 
   deploy:
     runs-on: ubuntu-latest
