@@ -33,7 +33,11 @@ async function requireSession(
   next: NextFunction,
 ): Promise<void> {
   const sessionId = req.cookies?.sessionId;
-  if (!sessionId || !(await isValidSession(sessionId))) {
+  if (!sessionId) {
+    res.status(401).json({ message: "SessionId not found" });
+    return;
+  }
+  if (!(await isValidSession(sessionId))) {
     res.status(401).json({ message: "Invalid or expired session" });
     return;
   }
