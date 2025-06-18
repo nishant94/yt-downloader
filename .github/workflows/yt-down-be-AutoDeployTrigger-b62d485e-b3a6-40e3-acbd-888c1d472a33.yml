@@ -34,7 +34,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}/server
-          dockerfilePath: ${{ github.workspace }}/server/Dockerfile
+          dockerfilePath: Dockerfile
           registryUrl: ytdown.azurecr.io
           registryUsername: ${{ secrets.YTDOWNBE_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.YTDOWNBE_REGISTRY_PASSWORD }}
