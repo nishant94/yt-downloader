@@ -7,15 +7,19 @@ This is a FastAPI server that provides an HTTP API to download YouTube videos us
 - Returns the video file as a response.
 
 ## Usage
-1. Install dependencies:
+1. Install uv:
    ```sh
-   pip install -r requirements.txt  # or use a tool that supports pyproject.toml
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
-2. Run the server:
+2. Sync packages using uv:
+   ```sh
+   uv sync
+   ```
+3. Run the server:
    ```sh
    uvicorn main:app --reload
    ```
-3. Download a video:
+4. Download a video:
    - Send a GET request to `/download?url=YOUTUBE_URL`
 
 ## Example

@@ -5,8 +5,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export type Format = {
   itag: number;
-  mimeType: string;
-  container: string;
+  mimeType?: string;
+  container?: string;
   qualityLabel?: string;
   audioBitrate?: number;
   bitrate?: number;
@@ -17,6 +17,13 @@ export type Format = {
   contentLength?: string;
   approxDurationMs?: string;
   url: string;
+  height?: number;
+  width?: number;
+  fps?: number;
+  vcodec?: string;
+  acodec?: string;
+  resolution?: string;
+  formatNote?: string;
 };
 
 export type Metadata = {

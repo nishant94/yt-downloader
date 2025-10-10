@@ -1,5 +1,5 @@
 import { Metadata } from "../api/youtube";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useTheme } from "../helpers/ThemeContext";
 
 function getThumbnail(
@@ -27,52 +27,132 @@ interface VideoMetadataProps {
 const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
   const { theme } = useTheme();
 
-  metadata.formats = Object.values(
-    metadata.formats.reduce((acc, format) => {
-      acc[format.itag] = acc[format.itag] || format;
-      return acc;
-    }, {} as Record<number, (typeof metadata.formats)[number]>),
-  );
-
-  const allVideoFormats = metadata.formats.filter(
-    (f) => f.hasVideo && f.qualityLabel && f.container === "mp4",
-  );
-  const videoFormats = Object.values(
-    allVideoFormats.reduce((acc, format) => {
-      if (!format.qualityLabel) return acc;
-      const key = format.qualityLabel;
-      if (!acc[key] || (format.bitrate || 0) > (acc[key].bitrate || 0)) {
-        acc[key] = format;
+  const uniqueFormats = useMemo(() => {
+    const map = new Map<number, (typeof metadata.formats)[number]>();
+    metadata.formats.forEach((format) => {
+      if (!format || typeof format.itag !== "number") return;
+      const existing = map.get(format.itag);
+      if (!existing || (format.bitrate || 0) > (existing.bitrate || 0)) {
+        map.set(format.itag, format);
       }
-      return acc;
-    }, {} as Record<string, (typeof allVideoFormats)[number]>),
-  ).sort((a, b) => {
-    const getNum = (label: string) => parseInt(label);
-    return getNum(b.qualityLabel!) - getNum(a.qualityLabel!);
-  });
+    });
+    return Array.from(map.values());
+  }, [metadata.formats]);
 
-  const audioFormats = metadata.formats
-    .filter(
-      (f) =>
-        f.hasAudio &&
-        !f.hasVideo &&
-        (f.audioBitrate != undefined
-          ? f.audioBitrate > 64
-          : f.bitrate ?? 0 > 64000),
-    )
-    .sort(
-      (a, b) =>
-        (b.audioBitrate || b.bitrate || 0) - (a.audioBitrate || a.bitrate || 0),
+  const getFormatHeight = (
+    format: (typeof metadata.formats)[number],
+  ): number => {
+    if (format.height) {
+      return format.height;
+    }
+    if (format.qualityLabel) {
+      const match = format.qualityLabel.match(/(\d{3,4})p/i);
+      if (match) {
+        const parsed = Number(match[1]);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+    }
+    if (format.resolution && format.resolution.includes("x")) {
+      const parts = format.resolution.split("x");
+      const parsed = Number(parts[1]);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return 0;
+  };
+
+  const getVideoOptionLabel = (format: (typeof metadata.formats)[number]) => {
+    const baseLabel = format.qualityLabel || `${getFormatHeight(format)}p`;
+    const codec = format.vcodec ? format.vcodec.split(".")[0] : "";
+    const fps = format.fps ? `${format.fps}fps` : "";
+    const extras = [codec, fps].filter(Boolean).join(" • ");
+    return extras ? `${baseLabel} (${extras})` : baseLabel;
+  };
+
+  const getAudioOptionLabel = (format: (typeof metadata.formats)[number]) => {
+    const bitrate =
+      format.audioBitrate ?? Math.round((format.bitrate ?? 0) / 1000);
+    if (bitrate && bitrate > 0) {
+      return `${bitrate} kbps`;
+    }
+    if (format.qualityLabel) return format.qualityLabel;
+    if (format.audioQuality) return format.audioQuality;
+    return "Best available";
+  };
+
+  const videoFormats = useMemo(() => {
+    const eligible = uniqueFormats.filter((f) => {
+      if (!f.hasVideo) return false;
+      const containerMatches = f.container
+        ? f.container.includes("mp4")
+        : true;
+      return containerMatches && getFormatHeight(f) >= 720;
+    });
+
+    const byHeight = new Map<number, (typeof eligible)[number]>();
+    eligible.forEach((format) => {
+      const height = getFormatHeight(format);
+      const existing = byHeight.get(height);
+      if (!existing || (format.bitrate || 0) > (existing.bitrate || 0)) {
+        byHeight.set(height, format);
+      }
+    });
+
+    return Array.from(byHeight.values()).sort(
+      (a, b) => getFormatHeight(b) - getFormatHeight(a),
     );
+  }, [uniqueFormats]);
 
-  const [type, setType] = useState<"video" | "audio">("video");
+  const audioFormats = useMemo(() => {
+    const audioOnly = uniqueFormats.filter((f) => f.hasAudio && !f.hasVideo);
+    if (audioOnly.length === 0) return [];
+
+    const sorted = [...audioOnly].sort((a, b) => {
+      const bitrateA =
+        a.audioBitrate ?? Math.round((a.bitrate ?? 0) / 1000);
+      const bitrateB =
+        b.audioBitrate ?? Math.round((b.bitrate ?? 0) / 1000);
+      if (bitrateA !== bitrateB) {
+        return bitrateB - bitrateA;
+      }
+      const qualityRank = (quality?: string) => {
+        if (!quality) return 0;
+        const lowered = quality.toLowerCase();
+        if (lowered.includes("high")) return 3;
+        if (lowered.includes("medium")) return 2;
+        if (lowered.includes("low")) return 1;
+        return 0;
+      };
+      return qualityRank(b.audioQuality) - qualityRank(a.audioQuality);
+    });
+    return [sorted[0]];
+  }, [uniqueFormats]);
+
+  const [type, setType] = useState<"video" | "audio">(
+    videoFormats.length > 0 ? "video" : "audio",
+  );
   const [selectedItag, setSelectedItag] = useState<number>(
-    videoFormats.length > 0 ? videoFormats[0].itag : audioFormats[0]?.itag || 0,
+    videoFormats[0]?.itag ?? audioFormats[0]?.itag ?? 0,
+  );
+  const [selectedAudioItag, setSelectedAudioItag] = useState<number>(
+    audioFormats[0]?.itag ?? 0,
   );
 
-  const [selectedAudioItag, setSelectedAudioItag] = useState<number>(
-    audioFormats.length > 0 ? audioFormats[0].itag : 0,
-  );
+  useEffect(() => {
+    if (videoFormats.length > 0) {
+      setType("video");
+      setSelectedItag(videoFormats[0].itag);
+      if (!videoFormats[0].hasAudio && audioFormats.length > 0) {
+        setSelectedAudioItag(audioFormats[0].itag);
+      }
+    } else if (audioFormats.length > 0) {
+      setType("audio");
+      setSelectedItag(audioFormats[0].itag);
+      setSelectedAudioItag(audioFormats[0].itag);
+    } else {
+      setSelectedItag(0);
+      setSelectedAudioItag(0);
+    }
+  }, [videoFormats, audioFormats]);
 
   const [progress, setProgress] = useState<{
     status: string;
@@ -98,12 +178,17 @@ const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
       }
     } else if (newType === "audio" && audioFormats.length > 0) {
       setSelectedItag(audioFormats[0].itag);
+      setSelectedAudioItag(audioFormats[0].itag);
     }
   };
 
   const handleFormatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const itag = Number(e.target.value);
     setSelectedItag(itag);
+    if (type === "audio") {
+      setSelectedAudioItag(itag);
+      return;
+    }
     const selectedVideo = videoFormats.find((f) => f.itag === itag);
     if (
       type === "video" &&
@@ -151,13 +236,30 @@ const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
           selectedVideo,
           type,
           metadata,
-          selectedAudioItag,
+          selectedAudioItag || audioFormats[0].itag,
         );
         return;
       }
+      if (selectedVideo) {
+        onDownload(selectedItag, selectedVideo, type, metadata, selectedAudioItag);
+        return;
+      }
     }
-    const selectedAudio = audioFormats.find((f) => f.itag === selectedItag);
-    onDownload(selectedItag, selectedAudio, type, metadata, selectedAudioItag);
+    const selectedAudio =
+      audioFormats.find((f) => f.itag === selectedItag) ||
+      audioFormats.find((f) => f.itag === selectedAudioItag) ||
+      audioFormats[0];
+    if (selectedAudio) {
+      onDownload(
+        selectedAudio.itag,
+        selectedAudio,
+        type,
+        metadata,
+        selectedAudio.itag,
+      );
+    } else {
+      onDownload(selectedItag, null, type, metadata, 0);
+    }
   };
 
   return (
@@ -270,7 +372,7 @@ const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
               >
                 {videoFormats.map((f) => (
                   <option key={f.itag} value={f.itag}>
-                    {f.qualityLabel}
+                    {getVideoOptionLabel(f)}
                   </option>
                 ))}
               </select>
@@ -299,15 +401,15 @@ const VideoMetadata = ({ metadata, onDownload }: VideoMetadataProps) => {
                 style={{
                   WebkitAppearance: "none",
                   MozAppearance: "none",
-                  appearance: "none",
-                }}
-              >
-                {audioFormats.map((f) => (
-                  <option key={f.itag} value={f.itag}>
-                    {f.audioBitrate || Math.round((f.bitrate || 0) / 1000)} kbps
-                  </option>
-                ))}
-              </select>
+                appearance: "none",
+              }}
+            >
+              {audioFormats.map((f) => (
+                <option key={f.itag} value={f.itag}>
+                  {getAudioOptionLabel(f)}
+                </option>
+              ))}
+            </select>
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-accent">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                   <path
